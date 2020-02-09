@@ -65,6 +65,4 @@ order_games <- function(robin_order, n_rounds = NULL) {
   return(game_order)
 }
 
-matchup_grid <- round_robin(10)
-order_games(matchup_grid, n_rounds = 18)
-
+# order_games(round_robin(10), n_rounds = 18)
