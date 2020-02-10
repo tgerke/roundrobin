@@ -47,26 +47,35 @@ pretty_robin <- function(x, team_var = "team", team_no_var = NULL, n_rounds = NU
   # do error checking for unique names
   # to-do
   
+  # need to ensure x is a tibble, not a data.frame due to 
+  # pull/match column referencing below
+  
+  # handle case where n_rounds == NULL
+  
   # add a team numbering 
   if(is.null(team_no_var)) {
     x <- x %>% mutate(team_no = 1:n())
+    team_no_var <- "team_no"
   }
   n_teams <- nrow(x)
   
   game_grid <- round_robin(n_teams = n_teams) %>% 
-    order_games(n_rounds = n_rounds)
+    order_games(n_rounds = n_rounds) %>%
+    as_tibble()
   
-  game_grid %>% 
-    separate('Round 1', into = c("away", "home")) %>%
-    mutate(home = x$team[match(home, x$team_no)],
-           away = x$team[match(away, x$team_no)]) %>% 
-    unite('Round 1', home, away, sep = " vs ")
+  # to-do: need to add bye week to lookup when team == 0
+  for (i in 1:n_rounds) {
+    game_grid <- game_grid %>% 
+      separate(paste('Round', i), into = c("away", "home")) %>%
+      mutate(home = pull(x, team_var)[match(home, pull(x, team_no_var))],
+             away = pull(x, team_var)[match(away, pull(x, team_no_var))]) %>%
+      unite(!!paste('Round', i), home, away, sep = " vs ")
+  }
   
-  game_grid %>% select(-Game) %>% 
-    purrr::map_df(~ separate(.x, into = c("away", "home")) %>%
-        mutate(home = x$team[match(home, x$team_no)],
-               away = x$team[match(away, x$team_no)]) #%>% 
-        #unite("help", home, away, sep = " vs ")
-  )  
-
+  return(game_grid)
 }
+
+# single division example
+teams %>% 
+  filter(division == "Shetland") %>%
+  pretty_robin(n_rounds = 18)
